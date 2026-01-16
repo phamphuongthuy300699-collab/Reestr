@@ -1,6 +1,6 @@
 import PocketBase from 'pocketbase';
 import { config } from '../config';
-import { Camp, DocType, Document, UserRole } from '../types';
+import { Camp, DocType, UserRole } from '../types';
 
 const pb = new PocketBase(config.pocketbaseUrl);
 

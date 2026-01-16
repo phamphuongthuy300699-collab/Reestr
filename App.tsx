@@ -1,4 +1,3 @@
-import React from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';

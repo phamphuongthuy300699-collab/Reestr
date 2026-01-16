@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Server, Shield, Database, Network, Box, AlertTriangle, Terminal, Wifi } from 'lucide-react';
+import { X, Database, Network, Box, Terminal, Wifi } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;

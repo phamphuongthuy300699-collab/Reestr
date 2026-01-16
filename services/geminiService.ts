@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { Camp, DocType } from "../types";
+import { Camp } from "../types";
 
 const getAiClient = () => {
   if (!process.env.API_KEY) {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, Camp, UserRole, DocType, Document } from '../types';
 import { config } from '../config';
 import { pbService } from '../services/pocketbaseService';

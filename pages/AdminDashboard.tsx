@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ArchitectureModal } from '../components/ArchitectureModal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download, Search, Server, FileCheck, AlertTriangle } from 'lucide-react';
-import { Camp, DocType } from '../types';
+import { DocType } from '../types';
 
 export const AdminDashboard = () => {
   const { camps, getCampStats } = useStore();
