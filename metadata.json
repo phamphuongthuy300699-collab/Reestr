@@ -1,0 +1,5 @@
+{
+  "name": "Reestr-Lipetsk",
+  "description": "Information system for the registry of children's recreation camps in the Lipetsk region. Features separate cabinets for camps and the Ministry of Education, document management, and AI-powered compliance auditing.",
+  "requestFramePermissions": []
+}
