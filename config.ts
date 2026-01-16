@@ -1,21 +1,20 @@
-// Вставьте сюда вашу ссылку из терминала (localtunnel), чтобы Превью работало с локальной БД
-// ВАЖНО: Ссылка меняется при каждом перезапуске localtunnel!
-const TUNNEL_URL = 'https://yellow-teeth-shake.loca.lt';
+// Вставьте сюда вашу ссылку из терминала (localtunnel), если используете его
+const TUNNEL_URL = ''; 
 
 // Логика определения URL сервера
 const getPocketBaseUrl = () => {
-  // 1. Если приложение открыто по самому туннелю (production build внутри PB)
+  // Если мы открыли сайт как статику из pb_public (порт 8090), 
+  // то API находится по этому же адресу. Используем относительный путь.
+  if (window.location.port === '8090') {
+    return '/';
+  }
+
+  // Если используется туннель
   if (window.location.hostname.includes('loca.lt') || window.location.hostname.includes('ngrok')) {
     return '/'; 
   }
 
-  // 2. Если мы разрабатываем в облаке (здесь, в чате), используем туннель до вашего ПК
-  // Проверяем, что ссылка не пустая и мы не на localhost
-  if (TUNNEL_URL && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
-    return TUNNEL_URL;
-  }
-
-  // 3. Локальная разработка на вашем ПК (React на localhost:3000 -> PB на localhost:8090)
+  // Если мы разрабатываем локально (React на 3000 порту, а PB на 8090)
   return 'http://127.0.0.1:8090';
 };
 
