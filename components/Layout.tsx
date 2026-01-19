@@ -4,9 +4,16 @@ import { UserRole } from '../types';
 import { LogOut, Building, FileText, UserCircle, ShieldCheck, WifiOff } from 'lucide-react';
 
 export const Layout = ({ children }: { children?: React.ReactNode }) => {
-  const { currentUser, logout, isBackendAvailable } = useStore();
+  const { currentUser, logout, isBackendAvailable, adminView, setAdminView } = useStore();
 
   if (!currentUser) return <>{children}</>;
+
+  const menuClass = (isActive: boolean) => 
+    `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+      isActive 
+      ? 'bg-gov-600 text-white shadow-sm' 
+      : 'text-gov-100 hover:bg-gov-800'
+    }`;
 
   return (
     <div className="min-h-screen flex bg-gray-50 font-sans">
@@ -25,20 +32,26 @@ export const Layout = ({ children }: { children?: React.ReactNode }) => {
         <nav className="flex-1 p-4 space-y-2">
           <div className="text-xs uppercase text-gov-500 font-semibold tracking-wider mb-2 px-2">Меню</div>
           
-          <div className="flex items-center gap-3 px-3 py-2 bg-gov-800 rounded-lg text-white">
+          <div className="flex items-center gap-3 px-3 py-2 bg-gov-800 rounded-lg text-white mb-6 opacity-90">
             <UserCircle className="w-5 h-5" />
             <span className="font-medium truncate">{currentUser.name}</span>
           </div>
 
           {currentUser.role === UserRole.ADMIN && (
-            <div className="mt-4">
-              <div className="flex items-center gap-3 px-3 py-2 text-gov-100 hover:bg-gov-800 rounded-lg transition-colors cursor-pointer">
-                <Building className="w-5 h-5" />
-                <span>Реестр организаций</span>
-              </div>
-              <div className="flex items-center gap-3 px-3 py-2 text-gov-100 hover:bg-gov-800 rounded-lg transition-colors cursor-pointer">
+            <div className="space-y-1">
+              <div 
+                className={menuClass(adminView === 'reports')}
+                onClick={() => setAdminView('reports')}
+              >
                 <FileText className="w-5 h-5" />
                 <span>Сводные отчеты</span>
+              </div>
+              <div 
+                className={menuClass(adminView === 'registry')}
+                onClick={() => setAdminView('registry')}
+              >
+                <Building className="w-5 h-5" />
+                <span>Реестр организаций</span>
               </div>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, Camp, UserRole, DocType, Document } from '../types';
+import { User, Camp, UserRole, DocType, Document, AdminView } from '../types';
 import { config } from '../config';
 import { pbService } from '../services/pocketbaseService';
 
@@ -8,6 +8,8 @@ interface StoreContextType {
   camps: Camp[];
   isLoading: boolean;
   isBackendAvailable: boolean;
+  adminView: AdminView;
+  setAdminView: (view: AdminView) => void;
   login: (role: UserRole) => void;
   logout: () => void;
   updateCamp: (campId: string, data: Partial<Camp>) => Promise<void>;
@@ -23,14 +25,38 @@ const MOCK_CAMPS: Camp[] = [
   {
     id: 'c1',
     name: 'ДОЛ "Звездный" (Демо режим)',
+    legalForm: 'МАОУ ДО',
+    ownershipType: 'Муниципальная',
+    municipality: 'Грязинский район',
     inn: '4826001234',
     oktmo: '42701000',
-    address: 'Липецкая обл., Грязинский р-н, с. Ярлуково',
-    directorName: 'Иванов И.И.',
+    
+    address: 'Липецкая обл., Грязинский р-н, с. Ярлуково, ул. Лесная 1',
+    legalAddress: '399050, Липецкая обл., г. Грязи, ул. Правды, д. 5',
+    directorName: 'Иванов Иван Иванович',
+    
     phone: '+7 (4742) 55-55-55',
     email: 'star@lipetsk.ru',
+    website: 'https://star.lipetsk.ru',
+    
+    campType: 'Загородный стационарный',
+    seasonality: 'сезонный',
+    shiftDates: '01.06-21.06, 24.06-14.07, 17.07-06.08',
     capacity: 350,
+    ticketCost: 32500,
+    ageCategory: '7-17 лет',
+    
+    accessibility: 'Пандусы, поручни, адаптированные санузлы',
+    
+    sanitaryNumber: '48.ОЦ.01.000.М.000123.05.23',
+    sanitaryDate: '25.05.2023',
+    medicalLicense: 'ЛО-48-01-001234 от 10.02.2020',
+    educationLicense: '№ 1234 от 01.09.2019',
+    inspectionResults: 'Плановая проверка Роспотребнадзора (май 2024) - нарушений не выявлено',
+    
+    hasSwimming: true,
     isVerified: true,
+    inclusionDate: '2024-05-15',
     documents: [
       { id: 'd1', type: DocType.FIRE_SAFETY, fileName: 'fire_cert_2024.pdf', uploadDate: '2024-04-10', status: 'verified' }
     ]
@@ -38,13 +64,35 @@ const MOCK_CAMPS: Camp[] = [
   {
     id: 'c2',
     name: 'Лагерь "Березка" (Демо режим)',
+    legalForm: 'ООО',
+    ownershipType: 'Частная',
+    municipality: 'Елецкий район',
     inn: '4802009988',
     oktmo: '42605000',
-    address: 'Липецкая обл., Елецкий р-н',
-    directorName: 'Сидоров В.В.',
+    
+    address: 'Липецкая обл., Елецкий р-н, с. Казаки',
+    legalAddress: 'Липецкая обл., г. Елец, ул. Мира, 10',
+    directorName: 'Сидоров Василий Васильевич',
+    
     phone: '+7 (47467) 2-22-22',
     email: 'berezka@elets.ru',
+    
+    campType: 'Палаточный',
+    seasonality: 'сезонный',
+    shiftDates: '01.07-14.07',
     capacity: 120,
+    ticketCost: 15000,
+    ageCategory: '10-16 лет',
+    
+    accessibility: 'Нет',
+    
+    sanitaryNumber: '',
+    sanitaryDate: '',
+    medicalLicense: '',
+    educationLicense: '',
+    inspectionResults: '',
+    
+    hasSwimming: false,
     isVerified: false,
     documents: []
   }
@@ -55,38 +103,62 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
   const [camps, setCamps] = useState<Camp[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
+  const [adminView, setAdminView] = useState<AdminView>('reports');
 
   // Function to refresh data from PocketBase
   const refreshData = async () => {
-    if (config.useMock) {
-      setCamps(MOCK_CAMPS);
-      setIsBackendAvailable(true);
+    if (config.useMock || !isBackendAvailable) {
+      if (camps.length === 0) setCamps(MOCK_CAMPS);
       return;
     }
 
     try {
       const data = await pbService.getCamps();
       setCamps(data);
-      setIsBackendAvailable(true);
     } catch (e) {
-      console.warn("PocketBase connection failed, falling back to Mock data:", e);
-      setIsBackendAvailable(false);
-      setCamps(MOCK_CAMPS);
+      console.warn("Could not fetch camps (might be permission issue or network):", e);
     }
   };
 
-  // Initial Load
+  // Initial Load - Check Connection First!
   useEffect(() => {
-    refreshData();
+    const init = async () => {
+      if (config.useMock) {
+        setIsBackendAvailable(true);
+        setCamps(MOCK_CAMPS);
+        return;
+      }
+
+      try {
+        await pbService.checkHealth();
+        setIsBackendAvailable(true);
+        console.log("PocketBase is online");
+
+        if (pbService.client.authStore.isValid) {
+            const role = pbService.client.authStore.model?.email.includes('admin') ? UserRole.ADMIN : UserRole.CAMP_USER;
+            setCurrentUser({
+                id: pbService.client.authStore.model?.id || 'unknown',
+                name: role === UserRole.ADMIN ? 'Администратор Министерства' : 'Директор Лагеря',
+                role: role,
+                campId: undefined
+            });
+            await refreshData();
+        }
+      } catch (e: any) {
+        console.warn("PocketBase is unreachable (using Mock Data):", e.message);
+        setIsBackendAvailable(false);
+        setCamps(MOCK_CAMPS);
+      }
+    };
+
+    init();
   }, []);
 
   const login = async (role: UserRole) => {
     setIsLoading(true);
     
-    // If backend is down or mock mode is on, use local login
     if (config.useMock || !isBackendAvailable) {
-        // Mock Login
-        await new Promise(r => setTimeout(r, 600)); // Fake delay
+        await new Promise(r => setTimeout(r, 600)); 
         if (role === UserRole.ADMIN) {
           setCurrentUser({ id: 'admin1', name: 'Министерство (Администратор)', role });
         } else {
@@ -113,18 +185,26 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
             campId: campId
         });
 
-    } catch (e) {
-        // Fallback to offline login if connection fails during login attempt
-        console.error("Login failed:", e);
-        alert("Ошибка подключения к серверу. Переход в автономный режим.");
-        setIsBackendAvailable(false);
-        setCamps(MOCK_CAMPS);
-        
-        // Retry login as mock
-        if (role === UserRole.ADMIN) {
-          setCurrentUser({ id: 'admin1', name: 'Министерство (Офлайн)', role });
+    } catch (e: any) {
+        // Handle connection errors gracefully without alarming console errors
+        const isConnectionError = e.status === 0 || 
+                                 e.message?.includes('autocancelled') || 
+                                 e.message?.includes('Something went wrong') ||
+                                 e.isAbort;
+
+        if (isConnectionError) {
+             console.warn("Server connection failed during login. Switching to offline mode.");
+             setIsBackendAvailable(false);
+             setCamps(MOCK_CAMPS);
+             
+             if (role === UserRole.ADMIN) {
+               setCurrentUser({ id: 'admin1', name: 'Министерство (Офлайн)', role });
+             } else {
+               setCurrentUser({ id: 'user1', name: 'Представитель Лагеря (Офлайн)', role, campId: 'c1' });
+             }
         } else {
-          setCurrentUser({ id: 'user1', name: 'Представитель Лагеря (Офлайн)', role, campId: 'c1' });
+            console.error("Login authentication failed:", e);
+            alert("Ошибка входа! Проверьте учетные данные.");
         }
     } finally {
         setIsLoading(false);
@@ -146,7 +226,6 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
         alert("Ошибка сохранения на сервере");
       }
     } else {
-        // Local update
         setCamps(prev => prev.map(c => c.id === campId ? { ...c, ...data } : c));
     }
   };
@@ -161,7 +240,6 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
         alert("Ошибка загрузки файла на сервер");
       }
     } else {
-        // Mock logic
         const newDoc: Document = {
             id: Math.random().toString(36).substr(2, 9),
             type,
@@ -199,7 +277,7 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
   };
 
   return (
-    <StoreContext.Provider value={{ currentUser, camps, isLoading, isBackendAvailable, login, logout, updateCamp, uploadDocument, deleteDocument, getCampStats }}>
+    <StoreContext.Provider value={{ currentUser, camps, isLoading, isBackendAvailable, adminView, setAdminView, login, logout, updateCamp, uploadDocument, deleteDocument, getCampStats }}>
       {children}
     </StoreContext.Provider>
   );

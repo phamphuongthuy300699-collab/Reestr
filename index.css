@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .label {
+    @apply block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5;
+  }
+  .input {
+    @apply w-full rounded-lg border-gray-300 border p-2.5 text-sm focus:ring-2 focus:ring-gov-500 focus:border-gov-500 transition-shadow outline-none;
+  }
+}
