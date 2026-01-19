@@ -23,8 +23,8 @@ export const Layout = ({ children }: { children?: React.ReactNode }) => {
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-8 h-8 text-gov-500" />
             <div>
-              <h1 className="font-bold text-lg leading-tight">Реестр Лагерей</h1>
-              <p className="text-xs text-gov-100 opacity-70">Липецкая область</p>
+              <h1 className="font-bold text-lg leading-tight">Реестр 2026</h1>
+              <p className="text-xs text-gov-100 opacity-70">Министерство образования</p>
             </div>
           </div>
         </div>

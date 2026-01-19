@@ -14,9 +14,10 @@ export const Login = () => {
           </div>
         </div>
         
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Реестр Лагерей</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Реестр Лагерей 2026</h1>
         <p className="text-gray-500 mb-8 text-sm">
-          Единая информационная система<br/>Министерства образования Липецкой области
+          Единая информационная система<br/>
+          Министерства образования Липецкой области
         </p>
 
         <div className="space-y-4">
@@ -45,7 +46,7 @@ export const Login = () => {
         </div>
         
         <div className="mt-8 text-xs text-gray-400">
-          <p>© 2024 Правительство Липецкой области</p>
+          <p>© 2026 Министерство образования Липецкой области</p>
           <p>Техническая поддержка: 8 (800) 000-00-00</p>
         </div>
       </div>
