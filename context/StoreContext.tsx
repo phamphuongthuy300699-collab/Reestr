@@ -20,7 +20,7 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-// Initial Mock Data (Fallback if PB is down)
+// Initial Mock Data (Fallback)
 const MOCK_CAMPS: Camp[] = [
   {
     id: 'c1',
@@ -30,71 +30,30 @@ const MOCK_CAMPS: Camp[] = [
     municipality: 'Грязинский район',
     inn: '4826001234',
     oktmo: '42701000',
-    
     address: 'Липецкая обл., Грязинский р-н, с. Ярлуково, ул. Лесная 1',
     legalAddress: '399050, Липецкая обл., г. Грязи, ул. Правды, д. 5',
     directorName: 'Иванов Иван Иванович',
-    
     phone: '+7 (4742) 55-55-55',
     email: 'star@lipetsk.ru',
     website: 'https://star.lipetsk.ru',
-    
     campType: 'Загородный стационарный',
     seasonality: 'сезонный',
     shiftDates: '01.06-21.06, 24.06-14.07, 17.07-06.08',
     capacity: 350,
     ticketCost: 32500,
     ageCategory: '7-17 лет',
-    
     accessibility: 'Пандусы, поручни, адаптированные санузлы',
-    
     sanitaryNumber: '48.ОЦ.01.000.М.000123.05.23',
     sanitaryDate: '25.05.2023',
     medicalLicense: 'ЛО-48-01-001234 от 10.02.2020',
     educationLicense: '№ 1234 от 01.09.2019',
     inspectionResults: 'Плановая проверка Роспотребнадзора (май 2024) - нарушений не выявлено',
-    
     hasSwimming: true,
     isVerified: true,
     inclusionDate: '2024-05-15',
     documents: [
       { id: 'd1', type: DocType.FIRE_SAFETY, fileName: 'fire_cert_2024.pdf', uploadDate: '2024-04-10', status: 'verified' }
     ]
-  },
-  {
-    id: 'c2',
-    name: 'Лагерь "Березка" (Демо режим)',
-    legalForm: 'ООО',
-    ownershipType: 'Частная',
-    municipality: 'Елецкий район',
-    inn: '4802009988',
-    oktmo: '42605000',
-    
-    address: 'Липецкая обл., Елецкий р-н, с. Казаки',
-    legalAddress: 'Липецкая обл., г. Елец, ул. Мира, 10',
-    directorName: 'Сидоров Василий Васильевич',
-    
-    phone: '+7 (47467) 2-22-22',
-    email: 'berezka@elets.ru',
-    
-    campType: 'Палаточный',
-    seasonality: 'сезонный',
-    shiftDates: '01.07-14.07',
-    capacity: 120,
-    ticketCost: 15000,
-    ageCategory: '10-16 лет',
-    
-    accessibility: 'Нет',
-    
-    sanitaryNumber: '',
-    sanitaryDate: '',
-    medicalLicense: '',
-    educationLicense: '',
-    inspectionResults: '',
-    
-    hasSwimming: false,
-    isVerified: false,
-    documents: []
   }
 ];
 
@@ -105,7 +64,6 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
   const [adminView, setAdminView] = useState<AdminView>('reports');
 
-  // Function to refresh data from PocketBase
   const refreshData = async () => {
     if (config.useMock || !isBackendAvailable) {
       if (camps.length === 0) setCamps(MOCK_CAMPS);
@@ -115,23 +73,29 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
     try {
       const data = await pbService.getCamps();
       setCamps(data);
-    } catch (e) {
-      console.warn("Could not fetch camps (might be permission issue or network):", e);
+    } catch (e: any) {
+      // If error is 404, it means collections don't exist yet, but server is ON.
+      if (e.status === 404) {
+          console.warn("Server connected, but tables missing. Using empty list.");
+          setCamps([]); 
+      } else {
+          console.warn("Could not fetch camps:", e);
+      }
     }
   };
 
-  // Initial Load - Check Connection First!
   useEffect(() => {
     const init = async () => {
       if (config.useMock) {
-        setIsBackendAvailable(true);
         setCamps(MOCK_CAMPS);
         return;
       }
 
+      // Optimistic: Assume backend is available if we are serving from it
+      setIsBackendAvailable(true);
+
       try {
         await pbService.checkHealth();
-        setIsBackendAvailable(true);
         console.log("PocketBase is online");
 
         if (pbService.client.authStore.isValid) {
@@ -145,9 +109,8 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
             await refreshData();
         }
       } catch (e: any) {
-        console.warn("PocketBase is unreachable (using Mock Data):", e.message);
-        setIsBackendAvailable(false);
-        setCamps(MOCK_CAMPS);
+        console.warn("Health check failed (likely network or first load):", e);
+        // Do NOT switch to offline mode immediately to allow retries
       }
     };
 
@@ -157,15 +120,16 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
   const login = async (role: UserRole) => {
     setIsLoading(true);
     
-    if (config.useMock || !isBackendAvailable) {
-        await new Promise(r => setTimeout(r, 600)); 
-        if (role === UserRole.ADMIN) {
-          setCurrentUser({ id: 'admin1', name: 'Министерство (Администратор)', role });
-        } else {
-          setCurrentUser({ id: 'user1', name: 'Представитель Лагеря', role, campId: 'c1' });
-        }
-        setIsLoading(false);
-        return;
+    if (config.useMock) {
+       // Mock login logic
+       await new Promise(r => setTimeout(r, 500));
+       if (role === UserRole.ADMIN) {
+         setCurrentUser({ id: 'admin1', name: 'Министерство (Тест)', role });
+       } else {
+         setCurrentUser({ id: 'user1', name: 'Лагерь (Тест)', role, campId: 'c1' });
+       }
+       setIsLoading(false);
+       return;
     }
 
     try {
@@ -173,6 +137,8 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
         await refreshData();
         
         let campId = undefined;
+        // If camp user, try to find their camp. If no camps exist, creates a draft one? 
+        // For now, simpler: user sees empty list until they create one.
         if (role === UserRole.CAMP_USER) {
             const allCamps = await pbService.getCamps();
             if (allCamps.length > 0) campId = allCamps[0].id;
@@ -184,27 +150,17 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
             role: role,
             campId: campId
         });
+        setIsBackendAvailable(true);
 
     } catch (e: any) {
-        // Handle connection errors gracefully without alarming console errors
-        const isConnectionError = e.status === 0 || 
-                                 e.message?.includes('autocancelled') || 
-                                 e.message?.includes('Something went wrong') ||
-                                 e.isAbort;
-
-        if (isConnectionError) {
-             console.warn("Server connection failed during login. Switching to offline mode.");
+        console.error("Login failed:", e);
+        
+        if (e.status === 0 || e.message?.includes('Failed to fetch')) {
+             alert("Сервер недоступен. Проверьте соединение.");
              setIsBackendAvailable(false);
              setCamps(MOCK_CAMPS);
-             
-             if (role === UserRole.ADMIN) {
-               setCurrentUser({ id: 'admin1', name: 'Министерство (Офлайн)', role });
-             } else {
-               setCurrentUser({ id: 'user1', name: 'Представитель Лагеря (Офлайн)', role, campId: 'c1' });
-             }
         } else {
-            console.error("Login authentication failed:", e);
-            alert("Ошибка входа! Проверьте учетные данные.");
+            alert(`Ошибка входа: ${e.message || 'Неверный логин/пароль'}. \n\nУбедитесь, что вы создали Admin User в панели управления (http://localhost:8090/_/)`);
         }
     } finally {
         setIsLoading(false);
@@ -217,55 +173,30 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
   };
 
   const updateCamp = async (campId: string, data: Partial<Camp>) => {
-    if (isBackendAvailable && !config.useMock) {
-      try {
+    try {
         await pbService.updateCamp(campId, data);
         await refreshData(); 
-      } catch (e) {
+    } catch (e) {
         console.error("PB Update failed", e);
-        alert("Ошибка сохранения на сервере");
-      }
-    } else {
-        setCamps(prev => prev.map(c => c.id === campId ? { ...c, ...data } : c));
+        alert("Ошибка сохранения! Возможно, не создана таблица 'camps' в базе.");
     }
   };
 
   const uploadDocument = async (campId: string, file: File, type: DocType) => {
-    if (isBackendAvailable && !config.useMock) {
-      try {
+    try {
         await pbService.uploadDocument(campId, file, type);
         await refreshData(); 
-      } catch (e) {
+    } catch (e) {
         console.error("PB Upload failed", e);
-        alert("Ошибка загрузки файла на сервер");
-      }
-    } else {
-        const newDoc: Document = {
-            id: Math.random().toString(36).substr(2, 9),
-            type,
-            fileName: file.name,
-            uploadDate: new Date().toISOString().split('T')[0],
-            status: 'pending'
-        };
-        setCamps(prev => prev.map(c => {
-            if (c.id === campId) return { ...c, documents: [...c.documents, newDoc] };
-            return c;
-        }));
+        alert("Ошибка загрузки! Проверьте таблицу 'documents'.");
     }
   };
 
   const deleteDocument = async (campId: string, docId: string) => {
-    if (isBackendAvailable && !config.useMock) {
-        try {
-            await pbService.deleteDocument(docId);
-            await refreshData();
-        } catch(e) { console.error(e); }
-    } else {
-        setCamps(prev => prev.map(c => {
-            if (c.id === campId) return { ...c, documents: c.documents.filter(d => d.id !== docId) };
-            return c;
-        }));
-    }
+    try {
+        await pbService.deleteDocument(docId);
+        await refreshData();
+    } catch(e) { console.error(e); }
   };
 
   const getCampStats = () => {
