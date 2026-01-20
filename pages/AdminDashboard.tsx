@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ArchitectureModal } from '../components/ArchitectureModal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Download, Search, Server, AlertTriangle, Users, Wallet, Map, CheckCircle2, XCircle, ChevronRight, FileText } from 'lucide-react';
+import { Download, Search, Server, AlertTriangle, Users, Wallet, Map, CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
 import { DocType } from '../types';
 
 export const AdminDashboard = () => {
@@ -176,7 +176,7 @@ export const AdminDashboard = () => {
                                 paddingAngle={5} 
                                 dataKey="value"
                             >
-                                {stats.typeData.map((entry, index) => (
+                                {stats.typeData.map((_, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                             </Pie>
