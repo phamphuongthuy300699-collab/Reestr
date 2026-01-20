@@ -7,7 +7,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    base: '/',
+    // Важно: './' позволяет запускать сайт из любой папки (pb_public)
+    base: './', 
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
       'process.env': {}
