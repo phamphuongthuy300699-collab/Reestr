@@ -99,14 +99,22 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
         console.log("PocketBase is online");
 
         if (pbService.client.authStore.isValid) {
-            const role = pbService.client.authStore.model?.email.includes('admin') ? UserRole.ADMIN : UserRole.CAMP_USER;
+            const model = pbService.client.authStore.model;
+            const role = model?.email.includes('admin') ? UserRole.ADMIN : UserRole.CAMP_USER;
+            
+            await refreshData();
+            
+            // Re-calc current user camp based on updated data
+            // We need to fetch camps first to find which one belongs to this user
+            const currentCamps = await pbService.getCamps();
+            const userCamp = currentCamps.find(c => c.email === model?.email);
+
             setCurrentUser({
-                id: pbService.client.authStore.model?.id || 'unknown',
+                id: model?.id || 'unknown',
                 name: role === UserRole.ADMIN ? 'Администратор Министерства' : 'Директор Лагеря',
                 role: role,
-                campId: undefined
+                campId: userCamp?.id
             });
-            await refreshData();
         }
       } catch (e: any) {
         console.warn("Health check failed (likely network or first load):", e);
@@ -133,19 +141,28 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
     }
 
     try {
-        await pbService.login(role);
+        const userModel = await pbService.login(role);
         await refreshData();
         
         let campId = undefined;
-        // If camp user, try to find their camp. If no camps exist, creates a draft one? 
-        // For now, simpler: user sees empty list until they create one.
         if (role === UserRole.CAMP_USER) {
+            // Updated logic: Find camp by matching email
+            // Since we just refreshed data, 'camps' state might not be updated yet in this closure, 
+            // so we fetch fresh list or rely on the return of refreshData (if we modified it).
+            // Safest: fetch fresh from service.
             const allCamps = await pbService.getCamps();
-            if (allCamps.length > 0) campId = allCamps[0].id;
+            const myCamp = allCamps.find(c => c.email === userModel.email);
+            
+            if (myCamp) {
+                campId = myCamp.id;
+            } else {
+               // Fallback if email doesn't match perfectly (e.g. manual creation) -> take first
+               if (allCamps.length > 0) campId = allCamps[0].id; 
+            }
         }
 
         setCurrentUser({
-            id: pbService.client.authStore.model?.id || 'unknown',
+            id: userModel.id || 'unknown',
             name: role === UserRole.ADMIN ? 'Администратор Министерства' : 'Директор Лагеря',
             role: role,
             campId: campId
@@ -155,12 +172,13 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
     } catch (e: any) {
         console.error("Login failed:", e);
         
-        if (e.status === 0 || e.message?.includes('Failed to fetch')) {
-             alert("Сервер недоступен. Проверьте соединение.");
+        if (e.status === 0 || e.message?.includes('fetch')) {
+             alert("Ошибка соединения с сервером (Status 0). Проверьте, что PocketBase запущен на порту 8090.");
              setIsBackendAvailable(false);
              setCamps(MOCK_CAMPS);
         } else {
-            alert(`Ошибка входа: ${e.message || 'Неверный логин/пароль'}. \n\nУбедитесь, что вы создали Admin User в панели управления (http://localhost:8090/_/)`);
+            // Show the actual message from pbService or PocketBase
+            alert(`Ошибка входа: ${e.message}`);
         }
     } finally {
         setIsLoading(false);

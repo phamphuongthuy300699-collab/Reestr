@@ -1,9 +1,9 @@
 import { useStore } from '../context/StoreContext';
 import { UserRole } from '../types';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Info } from 'lucide-react';
 
 export const Login = () => {
-  const { login } = useStore();
+  const { login, isLoading } = useStore();
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
@@ -23,9 +23,10 @@ export const Login = () => {
         <div className="space-y-4">
           <button 
             onClick={() => login(UserRole.ADMIN)}
-            className="w-full bg-gov-900 hover:bg-gov-800 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg"
+            disabled={isLoading}
+            className="w-full bg-gov-900 hover:bg-gov-800 disabled:opacity-50 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg"
           >
-            Войти как Министерство (Админ)
+            {isLoading ? 'Вход...' : 'Войти как Министерство (Админ)'}
           </button>
           
           <div className="relative">
@@ -39,15 +40,23 @@ export const Login = () => {
 
           <button 
             onClick={() => login(UserRole.CAMP_USER)}
-            className="w-full bg-white hover:bg-gray-50 text-gov-700 font-medium py-3 px-4 rounded-xl border-2 border-gov-100 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-white hover:bg-gray-50 disabled:opacity-50 text-gov-700 font-medium py-3 px-4 rounded-xl border-2 border-gov-100 transition-colors"
           >
-            Войти как Представитель Лагеря
+             {isLoading ? 'Вход...' : 'Войти как Представитель Лагеря'}
           </button>
         </div>
         
-        <div className="mt-8 text-xs text-gray-400">
-          <p>© 2026 Министерство образования Липецкой области</p>
-          <p>Техническая поддержка: 8 (800) 000-00-00</p>
+        <div className="mt-8 bg-blue-50 p-3 rounded-lg text-left">
+           <div className="flex items-start gap-2">
+              <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-blue-800">
+                 <p className="font-bold mb-1">Демо-доступ (Пароль: 12345678):</p>
+                 <p>Министерство: <span className="font-mono bg-blue-100 px-1 rounded">admin@edu.lipetsk.ru</span></p>
+                 <p className="mt-1">Лагерь: <span className="font-mono bg-blue-100 px-1 rounded">camp@lipetsk.ru</span></p>
+                 <p className="mt-2 text-blue-600 opacity-75 italic">Убедитесь, что эти пользователи созданы в базе.</p>
+              </div>
+           </div>
         </div>
       </div>
     </div>

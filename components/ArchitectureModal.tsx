@@ -29,20 +29,35 @@ export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <p className="text-gray-600 mb-4">
               Серверная часть работает локально на этом компьютере.
             </p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-700">
-              <li><strong>Запуск:</strong> Файл <code>pocketbase.exe</code></li>
-              <li><strong>Адрес:</strong> <code>http://127.0.0.1:8090</code></li>
-            </ul>
+            
+            <div className="bg-slate-900 text-slate-50 p-4 rounded-lg font-mono text-xs overflow-x-auto space-y-4">
+              <div>
+                <p className="text-gray-400 mb-1"># 1. Создание Главного Админа (Superuser):</p>
+                <p>.\pocketbase.exe superuser create admin@edu.lipetsk.ru 12345678</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1"># 2. Запуск сервера:</p>
+                <p>.\pocketbase.exe serve --http=0.0.0.0:8090</p>
+              </div>
+              <div>
+                 <p className="text-gray-400 mb-1"># 3. Админ-панель (Импорт схемы):</p>
+                 <a href="http://localhost:8090/_/" target="_blank" className="text-blue-300 underline">http://localhost:8090/_/</a>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-amber-50 text-amber-800 text-sm rounded border border-amber-200">
+               <strong>Важно:</strong> Не забудьте импортировать файл <code>pb_schema.json</code> в настройках админки (Settings - Import Collections).
+            </div>
           </section>
 
           <section>
             <div className="flex items-center gap-3 mb-4">
               <Network className="w-8 h-8 text-purple-600" />
-              <h3 className="text-xl font-semibold text-gray-900">Внешний доступ (Альтернативы Ngrok)</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Внешний доступ</h3>
             </div>
             
             <p className="text-sm text-gray-600 mb-4">
-              Так как Ngrok заблокирован в РФ, используйте один из следующих способов для демонстрации заказчику:
+              Способы показать демо заказчику удаленно:
             </p>
 
             <div className="grid gap-4">
@@ -51,22 +66,17 @@ export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <h4 className="font-bold text-gray-800 flex items-center gap-2">
                   <Terminal className="w-4 h-4" /> Вариант 1: Localtunnel (Рекомендуемый)
                 </h4>
-                <p className="text-sm text-gray-600 mt-1 mb-2">Не требует регистрации. Работает через Node.js.</p>
-                <div className="bg-slate-900 text-slate-50 p-3 rounded font-mono text-xs overflow-x-auto">
+                <div className="bg-slate-900 text-slate-50 p-3 rounded font-mono text-xs overflow-x-auto mt-2">
                   <p>npx localtunnel --port 8090</p>
                 </div>
-                <p className="text-xs text-amber-600 mt-2">
-                  * При первом открытии ссылки localtunnel может попросить ввести публичный IP для подтверждения.
-                </p>
               </div>
 
               {/* Option 2: SSH */}
               <div className="border rounded-lg p-4 bg-gray-50">
                 <h4 className="font-bold text-gray-800 flex items-center gap-2">
-                  <Terminal className="w-4 h-4" /> Вариант 2: SSH Tunell (Serveo)
+                  <Terminal className="w-4 h-4" /> Вариант 2: Serveo.net
                 </h4>
-                <p className="text-sm text-gray-600 mt-1 mb-2">Работает без установки доп. программ в командной строке Windows.</p>
-                <div className="bg-slate-900 text-slate-50 p-3 rounded font-mono text-xs overflow-x-auto">
+                <div className="bg-slate-900 text-slate-50 p-3 rounded font-mono text-xs overflow-x-auto mt-2">
                   <p>ssh -o ServerAliveInterval=60 -R 80:localhost:8090 serveo.net</p>
                 </div>
               </div>
@@ -74,28 +84,13 @@ export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
               {/* Option 3: Local LAN */}
               <div className="border rounded-lg p-4 bg-blue-50 border-blue-100">
                 <h4 className="font-bold text-blue-900 flex items-center gap-2">
-                  <Wifi className="w-4 h-4" /> Вариант 3: Локальная сеть (Офлайн)
+                  <Wifi className="w-4 h-4" /> Вариант 3: Локальная сеть
                 </h4>
                 <p className="text-sm text-blue-800 mt-1">
-                  Если вы и заказчик подключены к одному Wi-Fi:
+                   Доступ по IP (например: <code>http://192.168.1.55:8090</code>), если устройства в одной Wi-Fi сети.
                 </p>
-                <ol className="list-decimal pl-5 mt-2 text-sm text-blue-800 space-y-1">
-                  <li>Узнайте свой IP (команда <code>ipconfig</code>), например <code>192.168.1.55</code></li>
-                  <li>Запустите PocketBase так: <code>.\pocketbase.exe serve --http=0.0.0.0:8090</code></li>
-                  <li>Заказчик открывает: <code>http://192.168.1.55:8090</code></li>
-                </ol>
               </div>
             </div>
-          </section>
-
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <Database className="w-8 h-8 text-green-600" />
-              <h3 className="text-xl font-semibold text-gray-900">Безопасность данных</h3>
-            </div>
-            <p className="text-gray-600">
-              При использовании туннелей (варианты 1 и 2) трафик шифруется (HTTPS). Данные физически остаются на вашем ПК в папке <code>pb_data</code>.
-            </p>
           </section>
         </div>
       </div>
