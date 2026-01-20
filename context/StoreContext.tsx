@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, Camp, UserRole, DocType, Document, AdminView } from '../types';
+import { User, Camp, UserRole, DocType, AdminView } from '../types';
 import { config } from '../config';
 import { pbService } from '../services/pocketbaseService';
 
@@ -192,7 +192,7 @@ export const StoreProvider = ({ children }: { children?: ReactNode }) => {
     }
   };
 
-  const deleteDocument = async (campId: string, docId: string) => {
+  const deleteDocument = async (_campId: string, docId: string) => {
     try {
         await pbService.deleteDocument(docId);
         await refreshData();
